@@ -10,6 +10,6 @@ import java.io.File;
 public class RestTest {
     public static void main(String[] args) {
         ClarifaiRestClient clarifaiRestClient = new ClarifaiRestClient();
-        clarifaiRestClient.getTopTags(new File("/Users/sank/Desktop/2.jpg"));
+      //  clarifaiRestClient.getTopTags(new File("/Users/sank/Desktop/2.jpg"));
     }
 }

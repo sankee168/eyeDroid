@@ -1,10 +1,15 @@
 package com.example.black.restactions;
 
+import android.os.AsyncTask;
+import android.speech.tts.TextToSpeech;
+
 import com.clarifai.api.ClarifaiClient;
 import com.clarifai.api.RecognitionRequest;
 import com.clarifai.api.RecognitionResult;
 import com.clarifai.api.Tag;
 import com.example.black.constants.Constants;
+import com.example.black.projectx.MainActivity;
+import com.example.black.projectx.tts;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -12,18 +17,37 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Logger;
 
 /**
  * Created by sank on 1/23/16.
  */
-public class ClarifaiRestClient {
+public class ClarifaiRestClient extends AsyncTask<File,Void,List<String>> {
+
 
     Logger logger = Logger.getLogger(ClarifaiRestClient.class.getName());
-    public List<String> getTopTags(File file) {
+    private TextToSpeech t1;
+
+
+    public Map<String, Double> getAllTags(File file) {
+        Map<String, Double> allTags = new HashMap<String, Double>();
+        ClarifaiClient clarifai = new ClarifaiClient(Constants.RestConstants.APP_ID, Constants.RestConstants.APP_SECRET);
+        List<RecognitionResult> results = clarifai.recognize(new RecognitionRequest(file));
+
+        for (Tag tag : results.get(0).getTags()) {
+            if (!allTags.keySet().contains(tag.getName())) {
+                allTags.put(tag.getName(), tag.getProbability());
+            }
+        }
+        return allTags;
+    }
+
+    @Override
+    protected List<String> doInBackground(File... file) {
         List<String> finalTopTags = new ArrayList<>();
-        Map<String, Double> mapOfAllTags = getAllTags(file);
+        Map<String, Double> mapOfAllTags = getAllTags(file[0]);
         Iterator<String> iter = mapOfAllTags.keySet().iterator();
         Map<Double, String> valueList = new HashMap<>();
         while (iter.hasNext()) {
@@ -49,16 +73,10 @@ public class ClarifaiRestClient {
         return finalTopTags;
     }
 
-    public Map<String, Double> getAllTags(File file) {
-        Map<String, Double> allTags = new HashMap<String, Double>();
-        ClarifaiClient clarifai = new ClarifaiClient(Constants.RestConstants.APP_ID, Constants.RestConstants.APP_SECRET);
-        List<RecognitionResult> results = clarifai.recognize(new RecognitionRequest(file));
+    @Override
+    protected void onPostExecute(List<String> result){
+        logger.info(result.toString());
 
-        for (Tag tag : results.get(0).getTags()) {
-            if (!allTags.keySet().contains(tag.getName())) {
-                allTags.put(tag.getName(), tag.getProbability());
-            }
-        }
-        return allTags;
+
     }
 }
