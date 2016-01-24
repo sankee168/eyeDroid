@@ -3,49 +3,84 @@ package com.example.black.projectx;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
+import android.net.Uri;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
 
 import com.example.black.constants.Constants;
 import com.example.black.restactions.ClarifaiRestClient;
 
 import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.logging.Logger;
 
-public class MainActivity extends AppCompatActivity{
-    Logger logger = Logger.getLogger(MainActivity.class.getName());
-    EditText ed1;
-    Button b1;
+public class MainActivity extends AppCompatActivity {
+    private static final int REQUEST_TAKE_PHOTO = 1;
+    private static Logger logger = Logger.getLogger(MainActivity.class.getName());
     File file;
+    String mCurrentPhotoPath;
     List<String> topTags1;
     List<String> topTags2;
     String finalString;
-    private final int CHECK_CODE = 0x1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        ed1 = (EditText) findViewById(R.id.editText);
-        b1 = (Button) findViewById(R.id.button);
-
-        final Context c = this;
-        b1.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                file = new File("/storage/emulated/0/Pictures/Abc.jpg");
-                new Mytask(c).execute(null, null, null);
-            }
-        });
+        dispatchTakePictureIntent();
     }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode == RESULT_OK) {
+            galleryAddPic();
+            file = new File(mCurrentPhotoPath);
+            new Mytask(getApplicationContext()).execute(null, null, null);
+        }
+    }
+
+    private File createImageFile() throws IOException {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        File storageDir = Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_PICTURES);
+        File image = File.createTempFile(
+                imageFileName,  /* prefix */
+                ".jpg",         /* suffix */
+                storageDir      /* directory */
+        );
+
+        mCurrentPhotoPath = image.getAbsolutePath();
+        return image;
+    }
+
+    //TODO: Use Custom Intent rather than default camera intent.
+    private void dispatchTakePictureIntent() {
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+            File photoFile = null;
+            try {
+                photoFile = createImageFile();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+            if (photoFile != null) {
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT,
+                        Uri.fromFile(photoFile));
+                startActivityForResult(takePictureIntent, REQUEST_TAKE_PHOTO);
+            }
+        }
+    }
+
 
     public class Mytask extends AsyncTask<Void, Void, Void> {
         Context c;
@@ -60,7 +95,6 @@ public class MainActivity extends AppCompatActivity{
             return null;
         }
 
-
         @Override
         protected void onPostExecute(Void result) {
             topTags2 = topTags1;
@@ -70,10 +104,10 @@ public class MainActivity extends AppCompatActivity{
             }
             finalString = toSpeak;
             super.onPostExecute(result);
-            t1=new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+            t1 = new TextToSpeech(c, new TextToSpeech.OnInitListener() {
                 @Override
                 public void onInit(int status) {
-                    if(status != TextToSpeech.ERROR) {
+                    if (status != TextToSpeech.ERROR) {
                         t1.setLanguage(Locale.US);
                         String utteranceId = this.hashCode() + "";
                         t1.speak(finalString, TextToSpeech.QUEUE_FLUSH, null, utteranceId);
@@ -90,12 +124,6 @@ public class MainActivity extends AppCompatActivity{
         return true;
     }
 
-    private void checkTTS(){
-        Intent check = new Intent();
-        check.setAction(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
-        startActivityForResult(check, CHECK_CODE);
-    }
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
@@ -104,4 +132,13 @@ public class MainActivity extends AppCompatActivity{
         }
         return super.onOptionsItemSelected(item);
     }
+
+    private void galleryAddPic() {
+        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        File f = new File(mCurrentPhotoPath);
+        Uri contentUri = Uri.fromFile(f);
+        mediaScanIntent.setData(contentUri);
+        this.sendBroadcast(mediaScanIntent);
+    }
 }
+
