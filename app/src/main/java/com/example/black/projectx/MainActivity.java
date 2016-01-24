@@ -13,28 +13,11 @@ import android.view.MenuItem;
 
 import com.example.black.restactions.ClarifaiRestClient;
 
-import java.io.File;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-import java.util.logging.Logger;
-
-public class MainActivity extends AppCompatActivity implements TextToSpeech.OnInitListener {
-
-    static final int REQUEST_TAKE_PHOTO = 1;
-    private String mCurrentPhotoPath = null;
-    private TextToSpeech tts;
-    Logger logger = Logger.getLogger(MainActivity.class.getName());
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
-            super.onCreate(savedInstanceState);
-            setContentView(R.layout.activity_main);
-            tts test = new tts(this);
-            test.speak("Hi How Are You?");
-            dispatchTakePictureIntent();
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
     }
 
