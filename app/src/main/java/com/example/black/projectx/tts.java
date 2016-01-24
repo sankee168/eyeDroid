@@ -24,6 +24,7 @@ public class tts {
         });
     }
 
+
     public void speak(String s) {
         //Toast.makeText(c, toSpeak,Toast.LENGTH_SHORT).show();
         String utteranceId = this.hashCode() + "";
